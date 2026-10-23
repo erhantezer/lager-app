@@ -2,16 +2,67 @@ import { NextResponse } from 'next/server';
 import { adminClient, authenticated } from '@/lib/supabase';
 export const runtime='nodejs';
 const unauthorized=()=>NextResponse.json({error:'Ingen tilgang'},{status:401});
-export async function GET(req:Request){
- if(!await authenticated(req))return unauthorized();
- const db=adminClient();const {data,error}=await db.from('items').select('*').order('created_at',{ascending:false});
- if(error)return NextResponse.json({error:error.message},{status:500});
- const items=await Promise.all((data||[]).map(async(item)=>{
-  if(!item.image_path)return item;
-  const {data:signed}=await db.storage.from('item-images').createSignedUrl(item.image_path,3600);
-  return {...item,image_url:signed?.signedUrl||null};
- }));return NextResponse.json(items);
-}
+export async function GET(req: Request) {
+    if (!await authenticated(req)) return unauthorized();
+  
+    const db = adminClient();
+  
+    const { data, error } = await db
+      .from('items')
+      .select('*')
+      .order('created_at', { ascending: false });
+  
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+  
+    // Ürünleri ekleyen kullanıcıların kimliklerini topla
+    const userIds = [
+      ...new Set(
+        (data || [])
+          .map(item => item.created_by)
+          .filter((id): id is string => typeof id === 'string')
+      )
+    ];
+  
+    // Kullanıcı kimliklerini e-posta adresleriyle eşleştir
+    const emails = new Map<string, string>();
+  
+    for (const userId of userIds) {
+      const { data: userData, error: userError } =
+        await db.auth.admin.getUserById(userId);
+  
+      if (!userError && userData.user?.email) {
+        emails.set(userId, userData.user.email);
+      }
+    }
+  
+    const items = await Promise.all(
+      (data || []).map(async item => {
+        let image_url: string | null = null;
+  
+        if (item.image_path) {
+          const { data: signed } = await db.storage
+            .from('item-images')
+            .createSignedUrl(item.image_path, 3600);
+  
+          image_url = signed?.signedUrl || null;
+        }
+  
+        return {
+          ...item,
+          image_url,
+          created_by_email:
+            emails.get(item.created_by) || 'Ukjent bruker'
+        };
+      })
+    );
+  
+    return NextResponse.json(items);
+  }
 export async function POST(req:Request){
  const user=await authenticated(req);if(!user)return unauthorized();
  const form=await req.formData();
