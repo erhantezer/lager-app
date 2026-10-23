@@ -214,3 +214,18 @@ td { padding: 16px 22px; border-top: 1px solid #eef1f5; font-size: 13px; }
 .image-preview-content { position: relative; max-width: 95vw; max-height: 95vh; }
 .image-preview-content img { display: block; max-width: 95vw; max-height: 90vh; width: auto; height: auto; object-fit: contain; border-radius: 10px; }
 .image-preview-close { position: absolute; top: -18px; right: -18px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: white; color: #172033; font-size: 28px; cursor: pointer; box-shadow: 0 4px 20px #0005; }
+
+/* Produktdetaljer */
+.product-name-button { border: 0; padding: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+.product-name-button:hover { color: #3478f6; text-decoration: underline; }
+.product-name-button:focus-visible, .product-detail-photo:focus-visible { outline: 3px solid #3478f6; outline-offset: 3px; }
+.product-detail-dialog { max-width: 620px; }
+.product-detail-photo { display: block; width: 100%; height: 230px; padding: 0; margin: 0 0 20px; border: 1px solid #e5e9ef; border-radius: 12px; background: #f8fafc; overflow: hidden; cursor: zoom-in; }
+.product-detail-photo img { width: 100%; height: 100%; object-fit: contain; }
+.product-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0 0 24px; }
+.product-detail-grid dt { color: #7a889b; font-size: 12px; margin-bottom: 5px; }
+.product-detail-grid dd { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.product-detail-description { border-top: 1px solid #e8edf3; padding-top: 18px; margin-bottom: 24px; }
+.product-detail-description h3 { font-size: 15px; margin: 0 0 10px; }
+.product-detail-description p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; color: #475569; }
+@media (max-width: 480px) { .product-detail-grid { grid-template-columns: 1fr; } }
