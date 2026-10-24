@@ -1,4 +1,5 @@
 "use client";
+import { Camera } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase";
@@ -420,6 +421,14 @@ export default function Home() {
         >
           <Boxes size={19} /> Lageroversikt
         </button>
+        <button
+  type="button"
+  onClick={() => router.push("/kamera")}
+  className="ai-nav-button"
+>
+  <Camera size={18} />
+  <span>AI-varetelling</span>
+</button>
         <button
           className={"nav " + (view === "history" ? "active" : "")}
           onClick={() => setView("history")}

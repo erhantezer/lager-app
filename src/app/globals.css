@@ -266,3 +266,95 @@ td { padding: 16px 22px; border-top: 1px solid #eef1f5; font-size: 13px; }
   font-size: 11px;
   font-weight: 600;
 }
+
+
+
+
+.ai-nav-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  color: #a9b9d1;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ai-nav-button:hover {
+  background: #243653;
+  color: #ffffff;
+}
+
+.ai-nav-button svg {
+  flex-shrink: 0;
+}
+
+
+/* Animert lys langs kanten av innloggingskortet */
+
+.login-card.login-glow {
+  position: relative;
+  isolation: isolate;
+  border: 5px solid transparent;
+  border-radius: 20px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    conic-gradient(
+      from var(--login-angle),
+      #2563eb,
+      #06b6d4,
+      #8b5cf6,
+      #ec4899,
+      #2563eb
+    ) border-box;
+  animation: login-border-rotate 4s linear infinite;
+}
+
+@property --login-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes login-border-rotate {
+  to {
+    --login-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card.login-glow {
+    animation: none;
+  }
+}
+
+
+.login-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.login-logo-image {
+  width: 160px;
+  height: auto;
+  max-height: 110px;
+  object-fit: contain;
+}
+
+.login-logo span {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #17324d;
+}
