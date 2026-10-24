@@ -395,7 +395,13 @@ export default function Home() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-icon">▣</div>
+        <div className="brand-icon">
+  <img
+    src="/favicon.ico"
+    alt="Forandringshuset"
+    className="brand-logo"
+  />
+</div>
           <span>
             LAGERROM<small>LAGERSTYRING</small>
           </span>
@@ -416,6 +422,10 @@ export default function Home() {
         <div className="side-bottom">
           <div className="avatar">{email.charAt(0).toUpperCase()}</div>
           <div className="account">
+          <div className="app-version">
+  <span>Systemversjon</span>
+  <strong>v1.0.0</strong>
+</div>
             <strong>Autorisert bruker</strong>
             <small>{email}</small>
           </div>
