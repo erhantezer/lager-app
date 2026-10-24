@@ -92,7 +92,8 @@ export default function Home() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [selected, setSelected] = useState<Item | null>(null),
-    [delta, setDelta] = useState(1),
+    [movementType, setMovementType] = useState<"in" | "out">("in"),
+    [amount, setAmount] = useState("1"),
     [note, setNote] = useState(""),
     [ready, setReady] = useState(false),
     [email, setEmail] = useState(""),
@@ -181,6 +182,12 @@ export default function Home() {
   async function stock(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
+    const quantity = Number(amount);
+    if (amount.trim() === "" || !Number.isSafeInteger(quantity) || quantity <= 0) {
+      setError("Antall må være et helt tall større enn 0.");
+      return;
+    }
+    const delta = movementType === "out" ? -quantity : quantity;
     setBusy(true);
     setError("");
     try {
@@ -614,7 +621,8 @@ export default function Home() {
                                 title="Registrer varemottak"
                                 onClick={() => {
                                   setSelected(i);
-                                  setDelta(1);
+                                  setMovementType("in");
+                                  setAmount("1");
                                   setError("");
                                 }}
                               >
@@ -624,7 +632,8 @@ export default function Home() {
                                 title="Registrer vareuttak"
                                 onClick={() => {
                                   setSelected(i);
-                                  setDelta(-1);
+                                  setMovementType("out");
+                                  setAmount("1");
                                   setError("");
                                 }}
                               >
@@ -811,14 +820,8 @@ export default function Home() {
               <label>
                 Type lagerbevegelse
                 <select
-                  value={delta > 0 ? "in" : "out"}
-                  onChange={(e) =>
-                    setDelta(
-                      e.target.value === "in"
-                        ? Math.abs(delta)
-                        : -Math.abs(delta)
-                    )
-                  }
+                  value={movementType}
+                  onChange={(e) => setMovementType(e.target.value as "in" | "out")}
                 >
                   <option value="in">Registrer varemottak (+)</option>
                   <option value="out">Registrer vareuttak (−)</option>
@@ -831,10 +834,8 @@ export default function Home() {
                   min="1"
                   step="1"
                   required
-                  value={Math.abs(delta)}
-                  onChange={(e) =>
-                    setDelta((delta > 0 ? 1 : -1) * Number(e.target.value))
-                  }
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                 />
               </label>
               <label>
@@ -853,7 +854,7 @@ export default function Home() {
                 >
                   Avbryt
                 </button>
-                <button className="primary" disabled={busy || delta === 0}>
+                <button className="primary" disabled={busy || amount.trim() === "" || !Number.isSafeInteger(Number(amount)) || Number(amount) <= 0}>
                   {busy ? "Lagrer…" : "Oppdater beholdning"}
                 </button>
               </div>
