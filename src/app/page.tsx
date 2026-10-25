@@ -99,7 +99,9 @@ export default function Home() {
     [ready, setReady] = useState(false),
     [email, setEmail] = useState(""),
     [previewImage, setPreviewImage] = useState<string | null>(null),
-    [detailItem, setDetailItem] = useState<Item | null>(null);
+    [detailItem, setDetailItem] = useState<Item | null>(null),
+    [duplicateItem, setDuplicateItem] = useState<{ id: string; name: string; quantity: number } | null>(null),
+    [duplicateAmount, setDuplicateAmount] = useState("1");
   const api = useCallback(
     async (path: string, init: RequestInit = {}) => {
       const { data } = await browserClient().auth.getSession();
@@ -181,32 +183,40 @@ export default function Home() {
         if (duplicate.code !== "DUPLICATE_PRODUCT" || !duplicate.existing_item) {
           throw err;
         }
-        const existing = duplicate.existing_item;
-        const extra = Number(form.get("quantity"));
-        if (extra === 0) {
-          setError("Produktet finnes allerede. Antallet må være større enn 0 for å oppdatere beholdningen.");
-          return;
-        }
-        if (extra > 100000) {
-          setError("Du kan legge til maksimalt 100 000 stk. om gangen.");
-          return;
-        }
-        const approved = window.confirm(
-          `Produktet «${existing.name}» finnes allerede på lageret.\n` +
-          `Nåværende beholdning: ${existing.quantity} stk.\n` +
-          `Legge til ${extra} stk. i den eksisterende beholdningen?`
-        );
-        if (!approved) return;
-        await api("transactions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            item_id: existing.id,
-            delta: extra,
-            note: "Varemottak ved registrering av eksisterende produkt",
-          }),
-        });
+        setDuplicateItem(duplicate.existing_item);
+        const initial = Number(form.get("quantity"));
+        setDuplicateAmount(Number.isSafeInteger(initial) && initial > 0 ? String(Math.min(initial, 100000)) : "1");
+        return;
       }
+      setModal(false);
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function addToExisting(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!duplicateItem) return;
+    const quantity = Number(duplicateAmount);
+    if (!duplicateAmount.trim() || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100000) {
+      setError("Angi et helt antall mellom 1 og 100 000.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await api("transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item_id: duplicateItem.id,
+          delta: quantity,
+          note: "Varemottak ved registrering av eksisterende produkt",
+        }),
+      });
+      setDuplicateItem(null);
       setModal(false);
       await refresh();
     } catch (e) {
@@ -751,7 +761,7 @@ export default function Home() {
           )}
         </div>
       </main>
-      {modal && (
+      {modal && !duplicateItem && (
         <div
           className="overlay"
           onMouseDown={(e) => {
@@ -833,6 +843,44 @@ export default function Home() {
                 </button>
                 <button className="primary" disabled={busy}>
                   {busy ? "Lagrer…" : "Lagre produkt"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {duplicateItem && (
+        <div className="overlay">
+          <div className="dialog compact" role="dialog" aria-modal="true" aria-label="Produktet finnes allerede">
+            <div className="dialog-top">
+              <div>
+                <p className="eyebrow">DUPLIKAT PRODUKT</p>
+                <h2>Produktet finnes allerede!</h2>
+                <p className="muted">«{duplicateItem.name}» er allerede registrert på lageret.</p>
+              </div>
+            </div>
+            {error && <div className="error banner">{error}</div>}
+            <form className="form" onSubmit={addToExisting}>
+              <p>Nåværende beholdning: <strong>{duplicateItem.quantity} stk.</strong></p>
+              <label>
+                Hvor mange vil du legge til?
+                <input
+                  type="number"
+                  min="1"
+                  max="100000"
+                  step="1"
+                  required
+                  value={duplicateAmount}
+                  onChange={(e) => setDuplicateAmount(e.target.value)}
+                />
+              </label>
+              <p>Ny beholdning: <strong>{duplicateItem.quantity + (Number.isSafeInteger(Number(duplicateAmount)) && Number(duplicateAmount) > 0 ? Number(duplicateAmount) : 0)} stk.</strong></p>
+              <div className="form-actions">
+                <button type="button" className="secondary" disabled={busy} onClick={() => { setDuplicateItem(null); setError(""); }}>
+                  Avbryt
+                </button>
+                <button className="primary" disabled={busy || !duplicateAmount.trim() || !Number.isSafeInteger(Number(duplicateAmount)) || Number(duplicateAmount) < 1 || Number(duplicateAmount) > 100000}>
+                  {busy ? "Lagrer…" : "Legg til antall"}
                 </button>
               </div>
             </form>
