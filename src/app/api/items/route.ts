@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       );
     }
   
-    // Ürünleri ekleyen kullanıcıların kimliklerini topla
+    // Samle bruker-ID-ene til dem som har lagt til produkter
     const userIds = [
       ...new Set(
         (data || [])
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
       )
     ];
   
-    // Kullanıcı kimliklerini e-posta adresleriyle eşleştir
+    // Koble bruker-ID-er til e-postadresser
     const emails = new Map<string, string>();
   
     for (const userId of userIds) {
@@ -68,7 +68,23 @@ export async function POST(req:Request){
  const form=await req.formData();
  const name=String(form.get('name')||'').trim();const quantity=Number(form.get('quantity'));
  if(!name||name.length>180||!Number.isSafeInteger(quantity)||quantity<0)return NextResponse.json({error:'Ugyldig produktnavn eller antall'},{status:400});
- const db=adminClient();let image_path:null|string=null;
+ const db=adminClient();
+
+ // Kontroller produktnavnet før eventuell bildeopplasting.
+ const {data:existingItems,error:lookupError}=await db.from('items').select('id,name,quantity');
+ if(lookupError)return NextResponse.json({error:lookupError.message},{status:500});
+ const normalize=(value:string)=>value.trim().replace(/\s+/g,' ').toLocaleLowerCase('nb-NO');
+ const existing=existingItems?.find(item=>normalize(item.name)===normalize(name));
+ if(existing){
+  return NextResponse.json({
+   error:'Produktet finnes allerede på lageret.',
+   code:'DUPLICATE_PRODUCT',
+   existing_item:{id:existing.id,name:existing.name,quantity:existing.quantity},
+   requested_quantity:quantity
+  },{status:409});
+ }
+
+ let image_path:null|string=null;
  const file=form.get('image');
  if(file instanceof File&&file.size){
   if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))return NextResponse.json({error:'Bildet må være JPG, PNG eller WebP og maks. 5 MB'},{status:400});

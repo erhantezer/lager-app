@@ -116,7 +116,7 @@ export default function Home() {
       });
       const json = await res.json();
       if (!res.ok)
-        throw Error(
+        throw Object.assign(new Error(
           (
             {
               "Yetkisiz erişim": "Ingen tilgang",
@@ -134,7 +134,7 @@ export default function Home() {
           )[json.error] ||
             json.error ||
             "Handlingen kunne ikke utføres"
-        );
+        ), { code: json.code, existing_item: json.existing_item });
       return json;
     },
     [router]
@@ -171,7 +171,42 @@ export default function Home() {
       if (image instanceof File && image.size > 0) {
         form.set("image", await compressProductImage(image));
       }
-      await api("items", { method: "POST", body: form });
+      try {
+        await api("items", { method: "POST", body: form });
+      } catch (err) {
+        const duplicate = err as Error & {
+          code?: string;
+          existing_item?: { id: string; name: string; quantity: number };
+        };
+        if (duplicate.code !== "DUPLICATE_PRODUCT" || !duplicate.existing_item) {
+          throw err;
+        }
+        const existing = duplicate.existing_item;
+        const extra = Number(form.get("quantity"));
+        if (extra === 0) {
+          setError("Produktet finnes allerede. Antallet må være større enn 0 for å oppdatere beholdningen.");
+          return;
+        }
+        if (extra > 100000) {
+          setError("Du kan legge til maksimalt 100 000 stk. om gangen.");
+          return;
+        }
+        const approved = window.confirm(
+          `Produktet «${existing.name}» finnes allerede på lageret.\n` +
+          `Nåværende beholdning: ${existing.quantity} stk.\n` +
+          `Legge til ${extra} stk. i den eksisterende beholdningen?`
+        );
+        if (!approved) return;
+        await api("transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            item_id: existing.id,
+            delta: extra,
+            note: "Varemottak ved registrering av eksisterende produkt",
+          }),
+        });
+      }
       setModal(false);
       await refresh();
     } catch (e) {
