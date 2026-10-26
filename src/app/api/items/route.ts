@@ -10,8 +10,8 @@ export async function GET(req: Request) {
     const { data, error } = await db
       .from('items')
       .select('*')
-      .order('created_at', { ascending: false });
-  
+      .order('created_at', { ascending: true })
+.order('id', { ascending: true });
     if (error) {
       return NextResponse.json(
         { error: error.message },
